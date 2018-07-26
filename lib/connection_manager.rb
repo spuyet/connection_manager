@@ -1,52 +1,105 @@
-require_relative 'connection_manager/connection'
+require 'timeout'
+require "connection_manager/version"
+require "connection_manager/connection"
 
 class ConnectionManager
+
+  class LockedError < StandardError; end
+
   def initialize(**options)
-    @manager_timeout = @options.fetch(:action_timeout, false)
+    @connection_timeout = options.fetch(:connection_timeout, 0)
+    @manager_timeout = options.fetch(:manager_timeout, 0)
     @connections = {}
     @mutex = Mutex.new
   end
 
   def clear
     execute do
-      connections.delete_if { |_, connection| connection.closed? }
+      connections.delete_if do |_, connection|
+        connection.synchronize do
+          connection.closed?
+        end
+      end
     end
+    true
   end
 
   def close(key)
-    execute do
-      connections[key].close
+    connection = execute do
+      connections[key.to_sym]
     end
+    connection.synchronize do
+      connection.close
+    end if connection
+  end
+
+  def closed?(key)
+    connection = execute do
+      connections[key.to_sym]
+    end
+    connection.synchronize do
+      connection.closed?
+    end if connection
   end
 
   def delete(key)
     execute do
-      connections.delete(key.to_sym)
+      connection = connections[key.to_sym]
+      connection.synchronize do
+        connections.delete(key.to_sym)
+        true
+      end if connection
     end
-    true
   end
 
   def empty?
     size == 0
   end
 
+  def exists?(key)
+    execute do
+      connections.key? key.to_sym
+    end
+  end
+
+  def open?(key)
+    connection = execute do
+      connections[key.to_sym]
+    end
+    connection.synchronize do
+      !connection.closed?
+    end if connection
+  end
+
   def pop(key)
     execute do
-      connections.delete(key.to_sym).connection
+      connection = connections[key.to_sym]
+      connection.synchronize do
+        connections.delete(key.to_sym).connection
+      end if connection
     end
   end
 
   def push(key, connection, **options)
+    options[:timeout] ||= connection_timeout
     execute do
-      connections[key.to_sym] = Connection.new(connection, options)
+      previous_connection = connections[key.to_sym]
+      executor = if previous_connection
+        -> { previous_connection.synchronize { connections[key.to_sym] = Connection.new(connection, options) } }
+      else
+        -> { connections[key.to_sym] = Connection.new(connection, options) }
+      end
+      executor.call
     end
     true
   end
 
   def shutdown
     execute do
-      connections.map do |connection|
-        Thread.new { connection.close }
+      connections.values.map do |connection|
+        Thread.new do
+          connection.synchronize { connection.close }
+        end
       end.each(&:join)
     end
     true
@@ -58,29 +111,22 @@ class ConnectionManager
     end
   end
 
-  def with(key, **options)
+  def with(key, **options, &block)
     connection = execute do
-      connections[key].connection
+      connections[key.to_sym]
     end
-    timeout = options.fetch(:timeout, connection.timeout)
-    if timeout
-      Timeout.timeout(timeout) { yield(connection) }
-    else
-      yield(connection)
-    end
+    connection.synchronize(options) do
+      block.call(connection.connection)
+    end if connection
   end
 
   private
 
-  attr_reader :connections, :mutex, :manager_timeout
+  attr_reader :connections, :mutex, :connection_timeout, :manager_timeout
 
   def execute(&block)
-    mutex.synchronize do
-      if manager_timeout
-        Timeout.timeout(manager_timeout) { block.call }
-      else
-        block.call
-      end
+    Timeout.timeout(manager_timeout, LockedError) do
+      mutex.synchronize { block.call }
     end
   end
 end
