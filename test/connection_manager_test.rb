@@ -156,6 +156,36 @@ describe ConnectionManager do
     end
   end
 
+  describe "#delete_if?" do
+    it "does delete connection when block returns true" do
+      assert @connection_manager.push("my_tcp_connection_to_delete", TCPConnection.new, metadata: { to_delete: true })
+      assert @connection_manager.push("my_tcp_connection_to_keep", TCPConnection.new, metadata: { to_delete: false })
+      assert @connection_manager.push("my_udp_connection_to_delete", TCPConnection.new, metadata: { to_delete: true })
+      assert @connection_manager.push("my_udp_connection_to_keep", TCPConnection.new, metadata: { to_delete: false })
+      assert @connection_manager.delete_if { |_, metadata| metadata[:to_delete] }
+      assert_equal 2, @connection_manager.size
+      assert @connection_manager.exists?("my_tcp_connection_to_keep")
+      assert @connection_manager.exists?("my_udp_connection_to_keep")
+    end
+
+    it "does raise a manager timeout error when manager a timeout occurred" do
+      connection_manager = ConnectionManager.new(manager_timeout: 0.001)
+
+      connection_manager.instance_exec { @connections }.stub(:delete_if, proc { sleep 42 }) do
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.delete_if {} }
+      end
+    end
+
+    it "does raise a connection timeout error when connection timeout occurred" do
+      connection_manager = ConnectionManager.new(connection_timeout: 0.001)
+      connection_manager.push("my_connection", TCPConnection.new)
+
+      connection_manager.instance_exec { @connections[:my_connection] }.stub(:connection, proc { sleep 42 }) do
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.delete_if {} }
+      end
+    end
+  end
+
   describe "#empty?" do
     it "returns true when pool is empty" do
       assert @connection_manager.empty?

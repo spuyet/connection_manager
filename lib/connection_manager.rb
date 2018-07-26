@@ -51,6 +51,17 @@ class ConnectionManager
     end
   end
 
+  def delete_if(&block)
+    execute do
+      connections.delete_if do |_, connection|
+        connection.synchronize do
+          block.call(connection.connection, connection.metadata)
+        end
+      end
+    end
+    true
+  end
+
   def empty?
     size == 0
   end
@@ -97,6 +108,7 @@ class ConnectionManager
     execute do
       connections.values.map do |connection|
         Thread.new do
+          Thread.current.report_on_exception = false
           connection.synchronize { connection.close }
         end
       end.each(&:join)
@@ -115,7 +127,7 @@ class ConnectionManager
       connections[key.to_sym]
     end
     connection.synchronize(options) do
-      block.call(connection.connection)
+      block.call(connection.connection, connection.metadata)
     end if connection
   end
 

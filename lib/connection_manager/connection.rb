@@ -1,7 +1,7 @@
 class ConnectionManager::Connection
   class TimeoutError < StandardError; end
 
-  attr_reader :connection
+  attr_reader :connection, :metadata
 
   def initialize(connection, **options)
     @connection = connection
