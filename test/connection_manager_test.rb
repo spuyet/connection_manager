@@ -372,7 +372,7 @@ describe ConnectionManager do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:[], proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.with('my_connection') {} }
+        assert_raises(ConnectionManager::LockedError) { connection_manager.with("my_connection") {} }
       end
     end
 
@@ -381,7 +381,7 @@ describe ConnectionManager do
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections[:my_connection] }.stub(:connection, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.with('my_connection') {} }
+        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.with("my_connection") {} }
       end
     end
   end

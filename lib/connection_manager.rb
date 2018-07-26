@@ -1,4 +1,4 @@
-require 'timeout'
+require "timeout"
 require "connection_manager/version"
 require "connection_manager/connection"
 
