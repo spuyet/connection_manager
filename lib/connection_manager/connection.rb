@@ -1,5 +1,5 @@
 class ConnectionManager::Connection
-  class LockedError < StandardError; end
+  class TimeoutError < StandardError; end
 
   attr_reader :connection
 
@@ -24,7 +24,7 @@ class ConnectionManager::Connection
 
   def synchronize(**options, &block)
     timeout = options.fetch(:timeout, @timeout)
-    Timeout.timeout(timeout, LockedError) do
+    Timeout.timeout(timeout, TimeoutError) do
       mutex.synchronize { block.call }
     end
   end

@@ -1,10 +1,6 @@
 require "test_helper"
 
 describe ConnectionManager do
-
-  TCPConnection = Struct.new(:close)
-  UDPConnection = Struct.new(:close)
-
   before do
     @connection_manager = ConnectionManager.new
   end
@@ -39,20 +35,20 @@ describe ConnectionManager do
       assert_equal 1, @connection_manager.size
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:delete_if, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.clear }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.clear }
       end
     end
 
-    it "does raise a connection locked error when connection timeout occurred" do
+    it "does raise a connection timeout error when connection timeout occurred" do
       connection_manager = ConnectionManager.new(connection_timeout: 0.001)
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections[:my_connection] }.stub(:closed?, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.clear }
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.clear }
       end
     end
   end
@@ -78,20 +74,20 @@ describe ConnectionManager do
       assert @connection_manager.open?("my_open_connection")
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:[], proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.close("my_connection") }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.close("my_connection") }
       end
     end
 
-    it "does raise a connection locked error when connection timeout occurred" do
+    it "does raise a connection timeout error when connection timeout occurred" do
       connection_manager = ConnectionManager.new(connection_timeout: 0.001)
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections[:my_connection] }.stub(:close, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.close("my_connection") }
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.close("my_connection") }
       end
     end
   end
@@ -112,20 +108,20 @@ describe ConnectionManager do
       refute @connection_manager.closed?("my_connection")
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:[], proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.closed?("my_connection") }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.closed?("my_connection") }
       end
     end
 
-    it "does raise a connection locked error when connection timeout occurred" do
+    it "does raise a connection timeout error when connection timeout occurred" do
       connection_manager = ConnectionManager.new(connection_timeout: 0.001)
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections[:my_connection] }.stub(:closed?, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.closed?("my_connection") }
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.closed?("my_connection") }
       end
     end
   end
@@ -142,20 +138,20 @@ describe ConnectionManager do
       assert_nil @connection_manager.delete("unknown_connection")
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:[], proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.delete("my_connection") }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.delete("my_connection") }
       end
     end
 
-    it "does raise a connection locked error when connection timeout occurred" do
+    it "does raise a connection timeout error when connection timeout occurred" do
       connection_manager = ConnectionManager.new(connection_timeout: 0.001)
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections }.stub(:delete, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.delete("my_connection") }
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.delete("my_connection") }
       end
     end
   end
@@ -170,11 +166,11 @@ describe ConnectionManager do
       refute @connection_manager.empty?
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:keys, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.empty? }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.empty? }
       end
     end
   end
@@ -189,11 +185,11 @@ describe ConnectionManager do
       refute @connection_manager.exists?("my_connection")
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:key?, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.exists?("my_connection") }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.exists?("my_connection") }
       end
     end
   end
@@ -215,20 +211,20 @@ describe ConnectionManager do
       assert @connection_manager.empty?
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:[], proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.pop("my_connection") }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.pop("my_connection") }
       end
     end
 
-    it "does raise a connection locked error when connection timeout occurred" do
+    it "does raise a connection timeout error when connection timeout occurred" do
       connection_manager = ConnectionManager.new(connection_timeout: 0.001)
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections }.stub(:delete, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.pop("my_connection") }
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.pop("my_connection") }
       end
     end
   end
@@ -248,20 +244,20 @@ describe ConnectionManager do
       assert_instance_of UDPConnection,  @connection_manager.pop("my_connection")
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:[], proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.push("my_connection", TCPConnection.new) }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.push("my_connection", TCPConnection.new) }
       end
     end
 
-    it "does raise a connection locked error when connection timeout occurred if 'my_connection' already exist" do
+    it "does raise a connection timeout error when connection timeout occurred if 'my_connection' already exist" do
       connection_manager = ConnectionManager.new(connection_timeout: 0.001)
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections }.stub(:[]=, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.push("my_connection", UDPConnection.new) }
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.push("my_connection", UDPConnection.new) }
       end
     end
   end
@@ -278,12 +274,12 @@ describe ConnectionManager do
       assert @connection_manager.closed?("my_connection")
     end
 
-    it "does raise a connection locked error when connection timeout occurred" do
+    it "does raise a connection timeout error when connection timeout occurred" do
       connection_manager = ConnectionManager.new(connection_timeout: 0.001)
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections[:my_connection] }.stub(:closed?, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.open?("my_connection") }
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.open?("my_connection") }
       end
     end
   end
@@ -303,20 +299,20 @@ describe ConnectionManager do
       assert @connection_manager.shutdown
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:[], proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.open?("my_connection") }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.open?("my_connection") }
       end
     end
 
-    it "does raise a connection locked error when connection timeout occurred" do
+    it "does raise a connection timeout error when connection timeout occurred" do
       connection_manager = ConnectionManager.new(connection_timeout: 0.001)
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections[:my_connection] }.stub(:close, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.shutdown }
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.shutdown }
       end
     end
   end
@@ -344,11 +340,11 @@ describe ConnectionManager do
       assert_equal @connection_manager.size, 0
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:keys, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.size }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.size }
       end
     end
   end
@@ -368,20 +364,20 @@ describe ConnectionManager do
       end
     end
 
-    it "does raise a manager locked error when manager a timeout occurred" do
+    it "does raise a manager timeout error when manager a timeout occurred" do
       connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
       connection_manager.instance_exec { @connections }.stub(:[], proc { sleep 42 }) do
-        assert_raises(ConnectionManager::LockedError) { connection_manager.with("my_connection") {} }
+        assert_raises(ConnectionManager::TimeoutError) { connection_manager.with("my_connection") {} }
       end
     end
 
-    it "does raise a connection locked error when connection timeout occurred" do
+    it "does raise a connection timeout error when connection timeout occurred" do
       connection_manager = ConnectionManager.new(connection_timeout: 0.001)
       connection_manager.push("my_connection", TCPConnection.new)
 
       connection_manager.instance_exec { @connections[:my_connection] }.stub(:connection, proc { sleep 42 }) do
-        assert_raises(ConnectionManager::Connection::LockedError) { connection_manager.with("my_connection") {} }
+        assert_raises(ConnectionManager::Connection::TimeoutError) { connection_manager.with("my_connection") {} }
       end
     end
   end

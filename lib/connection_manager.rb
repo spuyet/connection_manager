@@ -3,7 +3,7 @@ require "connection_manager/version"
 require "connection_manager/connection"
 
 class ConnectionManager
-  class LockedError < StandardError; end
+  class TimeoutError < StandardError; end
 
   def initialize(**options)
     @connection_timeout = options.fetch(:connection_timeout, 0)
@@ -124,7 +124,7 @@ class ConnectionManager
   attr_reader :connections, :mutex, :connection_timeout, :manager_timeout
 
   def execute(&block)
-    Timeout.timeout(manager_timeout, LockedError) do
+    Timeout.timeout(manager_timeout, TimeoutError) do
       mutex.synchronize { block.call }
     end
   end
