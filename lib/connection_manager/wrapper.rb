@@ -1,6 +1,8 @@
 class ConnectionManager::Connection
   class TimeoutError < StandardError; end
+end
 
+class ConnectionManager::Wrapper
   attr_reader :connection, :metadata
 
   def initialize(connection, **options)
@@ -24,7 +26,7 @@ class ConnectionManager::Connection
 
   def synchronize(**options, &block)
     timeout = options.fetch(:timeout, @timeout)
-    Timeout.timeout(timeout, TimeoutError) do
+    Timeout.timeout(timeout, ::ConnectionManager::Connection::TimeoutError) do
       mutex.synchronize { block.call }
     end
   end

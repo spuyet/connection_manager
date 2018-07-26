@@ -1,8 +1,8 @@
 require "test_helper"
 
-describe ConnectionManager::Connection do
+describe ConnectionManager::Wrapper do
   before do
-    @connection = ConnectionManager::Connection.new(TCPConnection.new)
+    @connection = ConnectionManager::Wrapper.new(TCPConnection.new)
   end
 
   describe "#close" do
@@ -15,7 +15,7 @@ describe ConnectionManager::Connection do
     describe "when connection cannot be closed" do
       it "does not close connection" do
         my_connection = OpenStruct.new
-        wrapper = ConnectionManager::Connection.new(my_connection)
+        wrapper = ConnectionManager::Wrapper.new(my_connection)
         refute wrapper.closed?
         refute wrapper.close
         refute wrapper.closed?
@@ -25,7 +25,7 @@ describe ConnectionManager::Connection do
     describe "with a mapped #close method" do
       it "does call the mapped method when defined" do
         my_connection = OpenStruct.new(terminate: true)
-        wrapper = ConnectionManager::Connection.new(my_connection, close_method: :terminate)
+        wrapper = ConnectionManager::Wrapper.new(my_connection, close_method: :terminate)
         refute wrapper.closed?
         assert wrapper.close
         assert wrapper.closed?
@@ -33,7 +33,7 @@ describe ConnectionManager::Connection do
 
       it "does not call the mapped method when not defined" do
         my_connection = OpenStruct.new(terminate: true)
-        wrapper = ConnectionManager::Connection.new(my_connection, close_method: :foo_bar)
+        wrapper = ConnectionManager::Wrapper.new(my_connection, close_method: :foo_bar)
         refute wrapper.closed?
         refute wrapper.close
         refute wrapper.closed?
@@ -52,17 +52,17 @@ describe ConnectionManager::Connection do
   describe "#synchronize" do
     describe "when timeout is set" do
       it "does raise a connection timeout error when timeout elapsed" do
-        wrapper = ConnectionManager::Connection.new(CustomConnection.new, timeout: 0.001)
+        wrapper = ConnectionManager::Wrapper.new(CustomConnection.new, timeout: 0.001)
         assert_raises(ConnectionManager::Connection::TimeoutError) { wrapper.synchronize { sleep 42 } }
       end
       it "does use timeout param when defined" do
-        wrapper = ConnectionManager::Connection.new(CustomConnection.new, timeout: 1_000_000)
+        wrapper = ConnectionManager::Wrapper.new(CustomConnection.new, timeout: 1_000_000)
         assert_raises(ConnectionManager::Connection::TimeoutError) { wrapper.synchronize(timeout: 0.001) { sleep 42 } }
       end
     end
 
     it "has to be thread safe" do
-      wrapper = ConnectionManager::Connection.new(CustomConnection.new)
+      wrapper = ConnectionManager::Wrapper.new(CustomConnection.new)
       5.times.map do |i|
         Thread.new do
           wrapper.synchronize do

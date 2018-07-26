@@ -1,6 +1,6 @@
 require "timeout"
 require "connection_manager/version"
-require "connection_manager/connection"
+require "connection_manager/wrapper"
 
 class ConnectionManager
   class TimeoutError < StandardError; end
@@ -14,9 +14,9 @@ class ConnectionManager
 
   def clear
     execute do
-      connections.delete_if do |_, connection|
-        connection.synchronize do
-          connection.closed?
+      connections.delete_if do |_, wrapper|
+        wrapper.synchronize do
+          wrapper.closed?
         end
       end
     end
@@ -24,38 +24,38 @@ class ConnectionManager
   end
 
   def close(key)
-    connection = execute do
+    wrapper = execute do
       connections[key.to_sym]
     end
-    connection.synchronize do
-      connection.close
-    end if connection
+    wrapper.synchronize do
+      wrapper.close
+    end if wrapper
   end
 
   def closed?(key)
-    connection = execute do
+    wrapper = execute do
       connections[key.to_sym]
     end
-    connection.synchronize do
-      connection.closed?
-    end if connection
+    wrapper.synchronize do
+      wrapper.closed?
+    end if wrapper
   end
 
   def delete(key)
     execute do
-      connection = connections[key.to_sym]
-      connection.synchronize do
+      wrapper = connections[key.to_sym]
+      wrapper.synchronize do
         connections.delete(key.to_sym)
         true
-      end if connection
+      end if wrapper
     end
   end
 
   def delete_if(&block)
     execute do
-      connections.delete_if do |_, connection|
-        connection.synchronize do
-          block.call(connection.connection, connection.metadata)
+      connections.delete_if do |_, wrapper|
+        wrapper.synchronize do
+          block.call(wrapper.connection, wrapper.metadata)
         end
       end
     end
@@ -73,20 +73,20 @@ class ConnectionManager
   end
 
   def open?(key)
-    connection = execute do
+    wrapper = execute do
       connections[key.to_sym]
     end
-    connection.synchronize do
-      !connection.closed?
-    end if connection
+    wrapper.synchronize do
+      !wrapper.closed?
+    end if wrapper
   end
 
   def pop(key)
     execute do
-      connection = connections[key.to_sym]
-      connection.synchronize do
+      wrapper = connections[key.to_sym]
+      wrapper.synchronize do
         connections.delete(key.to_sym).connection
-      end if connection
+      end if wrapper
     end
   end
 
@@ -95,9 +95,9 @@ class ConnectionManager
     execute do
       previous_connection = connections[key.to_sym]
       executor = if previous_connection
-        -> { previous_connection.synchronize { connections[key.to_sym] = Connection.new(connection, options) } }
+        -> { previous_connection.synchronize { connections[key.to_sym] = Wrapper.new(connection, options) } }
       else
-        -> { connections[key.to_sym] = Connection.new(connection, options) }
+        -> { connections[key.to_sym] = Wrapper.new(connection, options) }
       end
       executor.call
     end
@@ -106,11 +106,11 @@ class ConnectionManager
 
   def shutdown
     execute do
-      connections.values.map do |connection|
+      connections.values.map do |wrapper|
         Thread.new do
           # Keep compatibility with ruby < 2.4
           Thread.current.report_on_exception = false if Thread.current.respond_to?(:report_on_exception=)
-          connection.synchronize { connection.close }
+          wrapper.synchronize { wrapper.close }
         end
       end.each(&:join)
     end
@@ -124,12 +124,12 @@ class ConnectionManager
   end
 
   def with(key, **options, &block)
-    connection = execute do
+    wrapper = execute do
       connections[key.to_sym]
     end
-    connection.synchronize(options) do
-      block.call(connection.connection, connection.metadata)
-    end if connection
+    wrapper.synchronize(options) do
+      block.call(wrapper.connection, wrapper.metadata)
+    end if wrapper
   end
 
   private
