@@ -3,7 +3,6 @@ require "connection_manager/version"
 require "connection_manager/connection"
 
 class ConnectionManager
-
   class LockedError < StandardError; end
 
   def initialize(**options)

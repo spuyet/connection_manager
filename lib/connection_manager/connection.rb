@@ -1,5 +1,4 @@
 class ConnectionManager::Connection
-
   class LockedError < StandardError; end
 
   attr_reader :connection
