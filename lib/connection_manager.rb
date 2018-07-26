@@ -108,7 +108,8 @@ class ConnectionManager
     execute do
       connections.values.map do |connection|
         Thread.new do
-          Thread.current.report_on_exception = false
+          # Keep compatibility with ruby < 2.4
+          Thread.current.report_on_exception = false if Thread.current.respond_to?(:report_on_exception=)
           connection.synchronize { connection.close }
         end
       end.each(&:join)
