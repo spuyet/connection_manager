@@ -16,7 +16,7 @@ Push your connections at any time:
 $manager.push("redis") { Redis.new }
 ```
 
-And use your connections according to your needs:
+And use them according to your needs:
 ```ruby
 $manager.with("redis) do |redis|
   redis.get("mykey")
