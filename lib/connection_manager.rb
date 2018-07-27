@@ -9,7 +9,7 @@ class ConnectionManager
 
   def initialize(**options)
     @connection_timeout = options.fetch(:connection_timeout, 0)
-    @manager_timeout = options.fetch(:manager_timeout, 0)
+    @manager_timeout = options.fetch(:timeout, 0)
     @connections = {}
     @mutex = Mutex.new
   end
@@ -92,18 +92,27 @@ class ConnectionManager
     end
   end
 
-  def push(key, connection, **options)
+  def push(key, **options, &block)
     options[:timeout] ||= connection_timeout
     execute do
       previous_connection = connections[key.to_sym]
       executor = if previous_connection
-        -> { previous_connection.synchronize { connections[key.to_sym] = Wrapper.new(connection, options) } }
+        -> { previous_connection.synchronize { connections[key.to_sym] = Wrapper.new(options, &block) } }
       else
-        -> { connections[key.to_sym] = Wrapper.new(connection, options) }
+        -> { connections[key.to_sym] = Wrapper.new(options, &block) }
       end
       executor.call
     end
     true
+  end
+
+  def reset(key)
+    execute do
+      wrapper = connections[key.to_sym]
+      wrapper.synchronize do
+        wrapper.reset
+      end if wrapper
+    end
   end
 
   def shutdown
@@ -129,6 +138,8 @@ class ConnectionManager
     wrapper = execute do
       connections[key.to_sym]
     end
+    raise Connection::ClosedError if wrapper && wrapper.closed?
+
     wrapper.synchronize(options) do
       block.call(wrapper.connection, wrapper.metadata)
     end if wrapper

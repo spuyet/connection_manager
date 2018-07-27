@@ -11,8 +11,11 @@ UDPConnection = Struct.new(:close)
 CustomConnection = Class.new do
   attr_reader :data
 
+  def initialize
+    @data = []
+  end
+
   def write(data)
-    @data ||= []
     @data << data
   end
 end
