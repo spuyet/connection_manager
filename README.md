@@ -18,7 +18,7 @@ $manager.push("redis") { Redis.new }
 
 And use them according to your needs:
 ```ruby
-$manager.with("redis) do |redis|
+$manager.with("redis") do |redis|
   redis.get("mykey")
 end
 ```
