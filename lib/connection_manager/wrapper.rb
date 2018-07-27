@@ -1,5 +1,5 @@
 class ConnectionManager::Connection
-  class TimeoutError < StandardError; end
+  class LockingError < StandardError; end
 end
 
 class ConnectionManager::Wrapper
@@ -26,12 +26,17 @@ class ConnectionManager::Wrapper
 
   def synchronize(**options, &block)
     timeout = options.fetch(:timeout, @timeout)
-    Timeout.timeout(timeout, ::ConnectionManager::Connection::TimeoutError) do
-      mutex.synchronize { block.call }
-    end
+    Timeout.timeout(*lock_timeout_args(timeout)) { mutex.lock }
+    block.call.tap { mutex.unlock  }
   end
 
   private
 
   attr_reader :mutex
+
+  def lock_timeout_args(timeout)
+    [timeout, ConnectionManager::Connection::LockingError].tap do |args|
+      args << "unable to acquire lock on time" if ConnectionManager::TIMEOUT_ARITY > 2
+    end
+  end
 end

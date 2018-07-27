@@ -3,7 +3,9 @@ require "connection_manager/version"
 require "connection_manager/wrapper"
 
 class ConnectionManager
-  class TimeoutError < StandardError; end
+  class LockingError < StandardError; end
+
+  TIMEOUT_ARITY = Timeout.method(:timeout).arity
 
   def initialize(**options)
     @connection_timeout = options.fetch(:connection_timeout, 0)
@@ -137,8 +139,15 @@ class ConnectionManager
   attr_reader :connections, :mutex, :connection_timeout, :manager_timeout
 
   def execute(&block)
-    Timeout.timeout(manager_timeout, TimeoutError) do
-      mutex.synchronize { block.call }
+    Timeout.timeout(*lock_timeout_args) { mutex.lock }
+    block.call.tap do
+      mutex.unlock
+    end
+  end
+
+  def lock_timeout_args
+    [manager_timeout, LockingError].tap do |args|
+      args << "unable to acquire lock on time" if TIMEOUT_ARITY > 2
     end
   end
 end

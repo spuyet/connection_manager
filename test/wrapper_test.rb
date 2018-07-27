@@ -49,15 +49,21 @@ describe ConnectionManager::Wrapper do
     end
   end
 
+  def with_connection_locked(&block)
+    wrapper = ConnectionManager::Wrapper.new(CustomConnection.new, timeout: 0.001)
+    t1 = Thread.new do
+      wrapper.synchronize { sleep 42 }
+    end
+    sleep 0.001 while t1.status != "sleep"
+    block.call(wrapper)
+  end
+
   describe "#synchronize" do
     describe "when timeout is set" do
-      it "does raise a connection timeout error when timeout elapsed" do
-        wrapper = ConnectionManager::Wrapper.new(CustomConnection.new, timeout: 0.001)
-        assert_raises(ConnectionManager::Connection::TimeoutError) { wrapper.synchronize { sleep 42 } }
-      end
-      it "does use timeout param when defined" do
-        wrapper = ConnectionManager::Wrapper.new(CustomConnection.new, timeout: 1_000_000)
-        assert_raises(ConnectionManager::Connection::TimeoutError) { wrapper.synchronize(timeout: 0.001) { sleep 42 } }
+      it "does raise a connection locking error when lock timeout elapsed" do
+        with_connection_locked do |wrapper|
+          assert_raises(ConnectionManager::Connection::LockingError) { wrapper.synchronize { raise } }
+        end
       end
     end
 
