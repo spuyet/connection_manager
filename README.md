@@ -2,25 +2,7 @@
 
 [![Build Status](https://travis-ci.com/spuyet/connection_manager.svg?token=n5bcPpqTwxxsDsj9JB2x&branch=master)](https://travis-ci.com/spuyet/connection_manager)
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/connection_manager`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
-
-## Installation
-
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'connection_manager'
-```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install connection_manager
+A gem to manage your persistent connections.
 
 ## Usage
 
@@ -39,3 +21,7 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/[USERN
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+
+## Author
+
+Sébastien Puyet ([@spuyet](https://twitter.com/spuyet)): [sebastien@puyet.fr](mailto:sebastien@puyet.fr)
