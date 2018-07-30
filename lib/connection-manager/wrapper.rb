@@ -1,9 +1,13 @@
+require "connection-manager/custom_timeout"
+
 class ConnectionManager::Connection
   class LockingError < StandardError; end
   class ClosedError < StandardError; end
 end
 
 class ConnectionManager::Wrapper
+  include ::ConnectionManager::CustomTimeout
+
   attr_reader :connection, :metadata
 
   def initialize(options = {}, &block)
@@ -12,7 +16,7 @@ class ConnectionManager::Wrapper
     @initializer = block
     @metadata = options.fetch(:metadata, {})
     @mutex = Mutex.new
-    @timeout = options.fetch(:timeout, 0)
+    @timeout = options[:timeout]
   end
 
   def close
@@ -35,17 +39,14 @@ class ConnectionManager::Wrapper
   def synchronize(**options, &block)
     @connection ||= initializer.call
     timeout = options.fetch(:timeout, @timeout)
-    Timeout.timeout(*lock_timeout_args(timeout)) { mutex.lock }
-    block.call.tap { mutex.unlock }
+    if timeout
+      with_custom_timeout(timeout, mutex, ::ConnectionManager::Connection::LockingError, &block)
+    else
+      mutex.synchronize(&block)
+    end
   end
 
   private
 
   attr_reader :close_method, :mutex, :initializer
-
-  def lock_timeout_args(timeout)
-    [timeout, ConnectionManager::Connection::LockingError].tap do |args|
-      args << "unable to acquire lock on time" if ConnectionManager::TIMEOUT_ARITY > 2
-    end
-  end
 end

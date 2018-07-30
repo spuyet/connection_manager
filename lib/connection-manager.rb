@@ -1,15 +1,15 @@
 require "timeout"
 require "connection-manager/version"
 require "connection-manager/wrapper"
+require "connection-manager/custom_timeout"
 
 class ConnectionManager
   class LockingError < StandardError; end
-
-  TIMEOUT_ARITY = Timeout.method(:timeout).arity
+  include CustomTimeout
 
   def initialize(**options)
-    @connection_timeout = options.fetch(:timeout, 0)
-    @manager_timeout = options.fetch(:manager_timeout, 0)
+    @connection_timeout = options[:timeout]
+    @manager_timeout = options[:manager_timeout]
     @connections = {}
     @mutex = Mutex.new
   end
@@ -159,15 +159,10 @@ class ConnectionManager
   attr_reader :connections, :mutex, :connection_timeout, :manager_timeout
 
   def execute(&block)
-    Timeout.timeout(*lock_timeout_args) { mutex.lock }
-    block.call.tap do
-      mutex.unlock
-    end
-  end
-
-  def lock_timeout_args
-    [manager_timeout, LockingError].tap do |args|
-      args << "unable to acquire lock on time" if TIMEOUT_ARITY > 2
+    if manager_timeout
+      with_custom_timeout(manager_timeout, mutex, ::ConnectionManager::LockingError, &block)
+    else
+      mutex.synchronize(&block)
     end
   end
 end
