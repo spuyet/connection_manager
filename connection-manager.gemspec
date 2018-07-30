@@ -1,10 +1,10 @@
 
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "connection_manager/version"
+require "connection-manager/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "connection_manager"
+  spec.name          = "connection-manager"
   spec.version       = ConnectionManager::VERSION
   spec.authors       = ["Sébastien Puyet"]
   spec.email         = ["sebastien@puyet.fr"]

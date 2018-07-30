@@ -1,6 +1,6 @@
 require "timeout"
-require "connection_manager/version"
-require "connection_manager/wrapper"
+require "connection-manager/version"
+require "connection-manager/wrapper"
 
 class ConnectionManager
   class LockingError < StandardError; end
