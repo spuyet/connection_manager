@@ -74,6 +74,15 @@ class ConnectionManager
     end
   end
 
+  def metadata(key)
+    wrapper = execute do
+      connections[key.to_sym]
+    end
+    wrapper.synchronize do
+      wrapper.metadata
+    end if wrapper
+  end
+
   def open?(key)
     wrapper = execute do
       connections[key.to_sym]

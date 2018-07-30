@@ -303,6 +303,27 @@ describe ConnectionManager do
     end
   end
 
+  describe "#metadata" do
+    it "does return an empty hash by default" do
+      assert_equal true, @connection_manager.push("my_connection") { TCPConnection.new }
+      assert_equal({}, @connection_manager.metadata("my_connection"))
+    end
+
+    it "does return stored data" do
+      assert_equal true, @connection_manager.push("my_connection") { TCPConnection.new }
+      @connection_manager.with("my_connection") do |_, metadata|
+        metadata[:foo] = :bar
+      end
+      assert_equal :bar, @connection_manager.metadata("my_connection")[:foo]
+    end
+
+    it "can be modified" do
+      assert_equal true, @connection_manager.push("my_connection") { TCPConnection.new }
+      @connection_manager.metadata("my_connection")[:john] = :doe
+      assert_equal :doe, @connection_manager.metadata("my_connection")[:john]
+    end
+  end
+
   describe "#reset" do
     it "does reopen the connection" do
       assert_equal true, @connection_manager.push("my_connection") { TCPConnection.new }
