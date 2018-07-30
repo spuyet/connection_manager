@@ -8,8 +8,8 @@ class ConnectionManager
   TIMEOUT_ARITY = Timeout.method(:timeout).arity
 
   def initialize(**options)
-    @connection_timeout = options.fetch(:connection_timeout, 0)
-    @manager_timeout = options.fetch(:timeout, 0)
+    @connection_timeout = options.fetch(:timeout, 0)
+    @manager_timeout = options.fetch(:manager_timeout, 0)
     @connections = {}
     @mutex = Mutex.new
   end

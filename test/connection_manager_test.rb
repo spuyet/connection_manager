@@ -6,7 +6,7 @@ describe ConnectionManager do
   end
 
   def with_manager_locked(&block)
-    connection_manager = ConnectionManager.new(timeout: 0.001)
+    connection_manager = ConnectionManager.new(manager_timeout: 0.001)
 
     t1 = Thread.new do
       connection_manager.send(:execute) { sleep 42 }
@@ -16,7 +16,7 @@ describe ConnectionManager do
   end
 
   def with_connection_locked(connection_name, &block)
-    connection_manager = ConnectionManager.new(connection_timeout: 0.001)
+    connection_manager = ConnectionManager.new(timeout: 0.001)
     connection_manager.push(connection_name) { TCPConnection.new }
     t1 = Thread.new do
       wrapper = connection_manager.instance_exec { connections[connection_name.to_sym] }
