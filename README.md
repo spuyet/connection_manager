@@ -23,6 +23,21 @@ $manager.with("redis") do |redis|
 end
 ```
 
+A metadata store per connection is also available allowing you to create custom behavior:
+```ruby
+Thread.new do 
+  $manager.with("redis") do |redis, metadata|
+    metadata[:last_used_at] = Time.now
+    redis.get("mykey")
+  end
+end
+
+Thread.new do
+  metadata = $manager.metadata("redis")
+  $manager.reset("redis") if metadata[:last_used_at] < 1.hour.ago
+end
+```
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/spuyet/connection_manager.
