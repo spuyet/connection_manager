@@ -1,6 +1,7 @@
 # ConnectionManager
 
 [![Build Status](https://travis-ci.com/spuyet/connection_manager.svg?token=n5bcPpqTwxxsDsj9JB2x&branch=master)](https://travis-ci.com/spuyet/connection_manager)
+[![Gem Version](https://badge.fury.io/rb/connection-manager.svg)](https://badge.fury.io/rb/connection-manager)
 
 A gem to manage your persistent connections.
 
@@ -8,7 +9,7 @@ A gem to manage your persistent connections.
 
 Create a thread-safe connection manager:
 ```ruby
-$manager = ConnectionManager.new(timeout: 5)  
+$manager = ConnectionManager.new(timeout: 5)
 ```
 
 Push your connections at any time:
@@ -25,7 +26,7 @@ end
 
 A metadata store per connection is also available allowing you to create custom behavior:
 ```ruby
-Thread.new do 
+Thread.new do
   $manager.with("redis") do |redis, metadata|
     metadata[:last_used_at] = Time.now
     redis.get("mykey")
